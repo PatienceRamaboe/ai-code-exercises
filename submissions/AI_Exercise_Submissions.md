@@ -1,177 +1,206 @@
-# AI Exercise Submissions
-**  Name:** Patience Ramaboe
-
----
-
-# Exercise 1: Knowing Where to Start
-
-## Initial Understanding
-I selected the Python Task Manager implementation. From the project structure, I understood that it is a command-line application for creating, updating, deleting, and managing tasks. The application is organized into separate files for the command-line interface, business logic, models, storage, and testing.
-
-## Technologies Used
-- Python 3.11+
-- JSON for data storage
-- argparse
-- unittest
-
-## Main Components
-- cli.py – Handles user commands.
-- task_manager.py – Contains the main business logic.
-- models.py – Defines Task, TaskStatus, and TaskPriority.
-- storage.py – Reads and writes tasks to JSON.
-- tests/ – Contains unit tests.
-
-## Feature Location
-For the "Export to CSV" feature, I would modify the storage layer because it already manages reading and writing task data. I would also add a new command in cli.py to allow users to export their tasks.
-
-## Domain Model
-The main entity is Task. Each task has a title, description, priority, status, due date, and tags. Status represents the current progress of the task, while priority determines its importance.
-
-## New Business Rule
-To automatically mark tasks as abandoned after being overdue for more than seven days, I would add a new status called ABANDONED and implement logic in task_manager.py that checks due dates before updating the task status. High-priority tasks would be excluded from this rule.
-
-## Reflection
-This exercise helped me understand how the project is organized and how AI can assist in quickly understanding an unfamiliar codebase. I also learned how different files work together to implement the application's functionality.
-
----
+ Exercise: Code Comprehension – Knowing Where to Start
+Codebase: Task Manager (Python)
+** Name:** Patience Ramaboe
 
 
-# Exercise 2: Codebase Exploration Challenge
+PART 1: Understanding Project Structure
+Initial Observations (Before AI Prompt)
 
-## Part 1: Understanding a Specific Feature
+By looking at the files, I noticed:
 
-### Task Creation and Status Updates
+cli.py imports from task_manager, models, and storage, so there are at least 3 modules
+task_manager.py imports from models and storage
+The project uses only Python standard library (argparse, datetime)
+Tasks are stored in a JSON file (tasks.json)
 
-The files involved in task creation and status updates are:
+My initial guess at the structure was:
 
-- `cli.py` – Receives user commands.
-- `task_manager.py` – Creates and updates tasks.
-- `models.py` – Defines the Task model and task status.
-- `storage.py` – Saves and loads tasks.
+cli.py → handles user commands
+task_manager.py → business logic
+models.py → Task, TaskStatus, TaskPriority classes
+storage.py → reads/writes tasks.json
+AI Prompt Used
 
-### Execution Flow
+"I have just joined a team maintaining a Python Task Manager CLI app. It has these files: cli.py (entry point using argparse), task_manager.py (business logic), models.py (Task, TaskStatus, TaskPriority), and storage.py (JSON file storage). No external dependencies. Can you explain the architectural pattern, each file's responsibility, the main entry points, and how data flows when a user runs a command?"
 
-1. The user enters a command in the terminal.
-2. `cli.py` processes the command.
-3. `task_manager.py` performs the requested operation.
-4. The task object is created or updated.
-5. `storage.py` saves the updated tasks to the JSON file.
+AI Analysis Result
 
-### Data Storage
+The project follows a 3-layer architecture:
 
-Task information is stored in a JSON file. Whenever a task is added or updated, the storage layer writes the latest task list to disk.
+USER INPUT
+→ cli.py (presentation layer: parses commands, formats output)
+→ task_manager.py (business logic: validation and coordination)
+→ storage.py (data layer: reads/writes tasks.json)
+→ models.py (domain layer: Task, enums, data structures)
 
-### Design Pattern
+Each file’s responsibility
+cli.py: Handles command-line arguments using argparse and displays output
+task_manager.py: Contains core logic like creating tasks, filtering, updating status
+models.py: Defines Task, TaskStatus, and TaskPriority
+storage.py: Handles saving/loading tasks from tasks.json
+Key entry point
 
-The project separates responsibilities into different modules:
-- CLI handles user interaction.
-- Models represent the data.
-- Task Manager contains business logic.
-- Storage manages persistence.
+cli.py → main() function
 
----
+Data flow example
 
-## Part 2: Understanding Task Priorities
+When running:
+python cli.py create "Fix bug"
 
-### Initial Understanding
+cli.py parses the command
+Calls task_manager.create_task()
+Task object is created from models.py
+storage.py saves it to tasks.json
+What I misunderstood initially
+I thought everything was inside task_manager.py
+I didn’t realise there was a separate storage.py and models.py
+I also assumed TaskManager handled storage directly, but it delegates that responsibility
+PART 2: Task Export to CSV Feature
+What I found in the codebase
+storage.py already handles JSON file operations
+task_manager.py already has methods that collect task data
+cli.py already follows a consistent command pattern
 
-I initially believed task priority was only used for displaying tasks.
+No CSV export feature exists yet.
 
-### Final Understanding
+AI Prompt Used
 
-After exploring the code, I discovered that priority is part of the Task model and is used throughout the application when managing tasks.
+"I need to add a Task Export to CSV feature. The app has cli.py, task_manager.py, models.py, and storage.py. Where should I implement it and what standard library tools should I use?"
 
-### Insights
+Where the feature goes
 
-- Priority is stored with every task.
-- It can be updated.
-- It helps organize work according to importance.
-
----
-
-## Part 3: Data Flow
-
-### Completing a Task
-
-Data Flow:
-
-User Command
-↓
-cli.py
-↓
 task_manager.py
-↓
-Task status updated
-↓
-storage.py
-↓
-tasks.json saved
+Add a method:
 
-### State Changes
+def export_to_csv(self, filename="tasks_export.csv"):
+    import csv
+    tasks = self.storage.get_all_tasks()
 
-- Status changes from TODO to DONE.
-- Completion date is recorded.
-- Updated task is saved.
+    with open(filename, "w", newline="") as f:
+        writer = csv.writer(f)
 
-### Possible Failure Points
+        writer.writerow(["ID", "Title", "Description", "Status",
+                         "Priority", "Due Date", "Tags",
+                         "Created At", "Completed At"])
 
-- Invalid task ID.
-- Missing JSON file.
-- File write errors.
-- Invalid status value.
+        for task in tasks:
+            writer.writerow([
+                task.id,
+                task.title,
+                task.description,
+                task.status.value,
+                task.priority.name,
+                task.due_date.strftime("%Y-%m-%d") if task.due_date else "",
+                ", ".join(task.tags),
+                task.created_at.strftime("%Y-%m-%d %H:%M"),
+                task.completed_at.strftime("%Y-%m-%d %H:%M") if task.completed_at else ""
+            ])
 
----
+    return filename
 
-## Part 4: Reflection
+cli.py
+Add a new command:
 
-This exercise improved my understanding of how data flows through the application. Using AI prompts helped me identify the important files more quickly and understand how they work together.
+export_parser = subparsers.add_parser("export", help="Export tasks to CSV")
+export_parser.add_argument("-f", "--file", default="tasks_export.csv")
 
+elif args.command == "export":
+    filename = task_manager.export_to_csv(args.file)
+    print(f"Tasks exported to {filename}")
 
-# Exercise 3: Algorithm Deconstruction Challenge
+Only task_manager.py and cli.py are affected.
 
-## Algorithm Selected
+PART 3: Domain Model Understanding
+Task entity
+id: unique identifier
+title: short name
+description: details
+status: current workflow state
+priority: urgency level
+due_date: deadline
+tags: labels
+created_at: creation timestamp
+completed_at: completion timestamp
+TaskStatus
 
-I chose the task prioritization algorithm used in the Python Task Manager.
+Workflow:
+TODO → IN_PROGRESS → REVIEW → DONE
+Values: todo, in_progress, review, done
 
-## Initial Understanding
+TaskPriority
 
-At first, I understood that the algorithm calculates a score for each task based on different attributes and then sorts tasks by importance.
+LOW (1) → MEDIUM (2) → HIGH (3) → URGENT (4)
 
-## How the Algorithm Works
+Key behaviour
 
-1. Read all task information.
-2. Calculate a priority score using factors such as priority level, due date, and task status.
-3. Compare the scores.
-4. Sort tasks from highest score to lowest score.
-5. Return the ordered list of tasks.
+When a task becomes DONE, mark_as_done() sets completed_at.
 
-## Inputs
+AI reflection questions
 
-- Task priority
-- Due date
-- Status
-- Task metadata
+1. due_date vs completed_at
+Due date is when it should be done, completed_at is when it was actually finished.
 
-## Outputs
+2. Why use mark_as_done()?
+Because setting DONE triggers extra logic (saving timestamp), not just a status change.
 
-- A sorted list of tasks from highest to lowest priority.
+3. What is overdue?
+A task past its due date and not completed.
 
-## Time Complexity
+PART 4: New Business Rule
 
-The scoring process runs once for each task, while sorting the list takes approximately O(n log n).
+Rule:
+Tasks overdue by more than 7 days should be marked as abandoned unless they are high priority.
 
-## Advantages
+Changes needed
+models.py → add ABANDONED status
+task_manager.py → add rule logic
+cli.py → add command trigger
+Logic (task_manager.py)
+def mark_abandoned_overdue_tasks(self):
+    from datetime import datetime, timedelta
 
-- Separates scoring from sorting.
-- Easy to extend with new business rules.
-- Makes important tasks appear first.
+    cutoff = datetime.now() - timedelta(days=7)
+    count = 0
 
-## Possible Improvements
+    tasks = self.storage.get_all_tasks()
 
-- Allow users to customize scoring weights.
-- Add more factors such as task owner or category.
-- Cache scores for better performance when the task list is large.
+    for task in tasks:
+        is_old = task.due_date and task.due_date < cutoff
+        is_active = task.status not in (TaskStatus.DONE, TaskStatus.ABANDONED)
+        is_low_priority = task.priority not in (TaskPriority.HIGH, TaskPriority.URGENT)
 
-## Reflection
+        if is_old and is_active and is_low_priority:
+            task.status = TaskStatus.ABANDONED
+            count += 1
 
-Breaking the algorithm into smaller steps made it much easier to understand. AI helped explain both the overall logic and the purpose of each step without needing to read every line of code first.
+    if count:
+        self.storage.save()
+
+    return count
+CLI command
+subparsers.add_parser("abandon", help="Auto-abandon overdue low priority tasks")
+
+elif args.command == "abandon":
+    count = task_manager.mark_abandoned_overdue_tasks()
+    print(f"{count} tasks marked as abandoned.")
+Questions before implementation
+Should abandoned tasks show in default lists?
+Should this run automatically or manually?
+Is HIGH only high priority, or does it include URGENT?
+Should we log abandoned tasks?
+Final Reflection
+Before vs After
+Thought there were 2 files → actually 4 modules
+Assumed storage was inside TaskManager → it’s separated
+Didn’t understand enums → now clear workflow states
+Didn’t see side effects → DONE triggers timestamp logic
+Most valuable insight
+
+Understanding the architecture first made everything else easier.
+
+Best strategy for new codebases
+Look at file structure first
+Identify architecture pattern
+Trace one full user action
+Understand domain model before coding
+Use AI to confirm, not replace understanding
