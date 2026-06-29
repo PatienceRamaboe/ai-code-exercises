@@ -1,5 +1,5 @@
 # AI Exercise Submissions
-**Student:** Patience Ramaboe
+**  Name:** Patience Ramaboe
 
 ---
 
